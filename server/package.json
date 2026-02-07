@@ -1,0 +1,17 @@
+{
+    "name": "mmorpg_server",
+    "type": "module",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "Deja",
+    "license": "ISC",
+    "dependencies": {
+        "finalhandler": "^2.1.1",
+        "router": "^2.2.0",
+        "ws": "^8.19.0"
+    }
+}
