@@ -1,13 +1,13 @@
-import { PlayerCommand, Game } from "./game.js";
-import { CENTER_POS_X, CENTER_POS_Y, MapGrid, VISIBLE_HEIGTH, VISIBLE_WIDTH } from "./map.js";
+import { PlayerCommand, Game, PlayerFacing } from "./game.js";
+import { CAMERA_WIDTH, CAMERA_CENTER_X, CAMERA_CENTER_Y, MapGrid, CAMERA_HEIGHT, MAP_WIDTH, MAP_HEIGHT } from "./map.js";
 import { Assets, SpriteIds, Sprites, TILE_SIZE } from "./sprites.js";
 
 const PORT = 8080;
 const SCALE = 3;
-const CANVAS_WIDTH = VISIBLE_WIDTH * TILE_SIZE * SCALE;
-const CANVAS_HEIGHT = VISIBLE_HEIGTH * TILE_SIZE * SCALE;
+const CANVAS_WIDTH = CAMERA_WIDTH * TILE_SIZE * SCALE;
+const CANVAS_HEIGHT = CAMERA_HEIGHT * TILE_SIZE * SCALE;
 const SOCKET_URI = `ws://localhost:${PORT}`
-
+const CHAR_CENTER_OFFSET = TILE_SIZE / 4;
 const canvasElem = document.getElementById("canvas");
 
 const ctx = canvasElem.getContext("2d");
@@ -70,38 +70,50 @@ async function init() {
                 break;
 
             case PlayerCommand.MOVE_RIGHT:
-                if (Game.isMe(message.playerId)) {
-                    Game.me.moveTo(message.pos.x, message.pos.y);
-                } else {
-                    const player = Game.getPlayerById(message.playerId);
-                    player.moveTo(message.pos.x, message.pos.y);
+                {
+                    let player;
+                    if (Game.isMe(message.playerId)) {
+                        player = Game.me;
+                    } else {
+                        player = Game.getPlayerById(message.playerId);
+                    }
+                    player.moveTo(message.from, message.to, message.facing);
                 }
                 break;
 
             case PlayerCommand.MOVE_LEFT:
-                if (Game.isMe(message.playerId)) {
-                    Game.me.moveTo(message.pos.x, message.pos.y);
-                } else {
-                    const player = Game.getPlayerById(message.playerId);
-                    player.moveTo(message.pos.x, message.pos.y);
+                {
+                    let player;
+                    if (Game.isMe(message.playerId)) {
+                        player = Game.me;
+                    } else {
+                        player = Game.getPlayerById(message.playerId);
+                    }
+                    player.moveTo(message.from, message.to, message.facing);
                 }
                 break;
 
             case PlayerCommand.MOVE_UP:
-                if (Game.isMe(message.playerId)) {
-                    Game.me.moveTo(message.pos.x, message.pos.y);
-                } else {
-                    const player = Game.getPlayerById(message.playerId);
-                    player.moveTo(message.pos.x, message.pos.y);
+                {
+                    let player;
+                    if (Game.isMe(message.playerId)) {
+                        player = Game.me;
+                    } else {
+                        player = Game.getPlayerById(message.playerId);
+                    }
+                    player.moveTo(message.from, message.to, message.facing);
                 }
                 break;
 
             case PlayerCommand.MOVE_DOWN:
-                if (Game.isMe(message.playerId)) {
-                    Game.me.moveTo(message.pos.x, message.pos.y);
-                } else {
-                    const player = Game.getPlayerById(message.playerId);
-                    player.moveTo(message.pos.x, message.pos.y);
+                {
+                    let player;
+                    if (Game.isMe(message.playerId)) {
+                        player = Game.me;
+                    } else {
+                        player = Game.getPlayerById(message.playerId);
+                    }
+                    player.moveTo(message.from, message.to, message.facing);
                 }
                 break;
 
@@ -171,71 +183,137 @@ async function init() {
         Game.leave();
     });
 
-    requestAnimationFrame(draw);
+    requestAnimationFrame(gameLoop);
 }
 
-function draw() {
+let lastTime = 0; // in seconds
 
-    ctx.fillStyle = "grey";
+function gameLoop(time) {
+
+    const dt = (time - lastTime) / 1000;
+    lastTime = time;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (!Game.me) {
-        requestAnimationFrame(draw);
+        requestAnimationFrame(gameLoop);
         return;
     }
 
-    // Draw scenario
-    for (let x = 0; x < VISIBLE_WIDTH; x++) {
-        for (let y = 0; y < VISIBLE_HEIGTH; y++) {
+    const me = Game.me;
 
-            ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE)
-            ctx.strokeStyle = "black";
-            ctx.lineWidth = 0.1;
-            ctx.strokeRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+    handlePlayerMoveProgress(dt, me);
 
-            const tx = x + (Game.me.pos.x - CENTER_POS_X);
-            const ty = y + (Game.me.pos.y - CENTER_POS_Y);
+    const interp = calcPlayerPosInterpolation(me);
 
-            if (tx < 0 || ty < 0) {
-                continue;
-            }
+    const meCameraOffsetX = interp.x - CAMERA_CENTER_X;
+    const meCameraOffsetY = interp.y - CAMERA_CENTER_Y;
 
-            const tile = MapGrid.tiles[tx][ty];
+    // Draw Scenario
+    for (let x = 0; x < MAP_WIDTH; x++) {
+        for (let y = 0; y < MAP_HEIGHT; y++) {
 
-            if (tile) {
-                const spriteId = tile.spriteId;
-                const sprite = Sprites[spriteId];
-                ctx.drawImage(tilesetImg, sprite.x, sprite.y,
-                    sprite.size, sprite.size,
-                    x * TILE_SIZE, y * TILE_SIZE,
-                    sprite.size, sprite.size);
-            }
+            const tile = MapGrid.tiles[x][y];
+            if (!tile) continue;
+
+            const sprite = Sprites[tile.spriteId];
+
+            ctx.drawImage(
+                tilesetImg,
+                sprite.x, sprite.y,
+                sprite.size, sprite.size,
+                (x - meCameraOffsetX) * TILE_SIZE,
+                (y - meCameraOffsetY) * TILE_SIZE,
+                sprite.size, sprite.size
+            );
         }
     }
 
-    const sprite = Sprites[SpriteIds.CHARACTER_1];
-    const charOffsetY = (TILE_SIZE / 4);
-
     // Draw myself
+    let sprite = getCharacterFacingSprite(Game.me);
+
     ctx.drawImage(characterImg, sprite.x, sprite.y,
         sprite.size, sprite.size,
-        CENTER_POS_X * TILE_SIZE, CENTER_POS_Y * TILE_SIZE - charOffsetY,
+        CAMERA_CENTER_X * TILE_SIZE, CAMERA_CENTER_Y * TILE_SIZE - CHAR_CENTER_OFFSET,
         sprite.size, sprite.size);
 
     // Draw players
     const players = Game.playersList();
+
     for (let player of players) {
 
-        // Position relative to myself
-        const x = CENTER_POS_X - (Game.me.pos.x - player.pos.x);
-        const y = CENTER_POS_Y - (Game.me.pos.y - player.pos.y);
+        let sprite = getCharacterFacingSprite(player);
 
-        ctx.drawImage(characterImg, sprite.x, sprite.y,
+        handlePlayerMoveProgress(dt, player);
+
+        const interp = calcPlayerPosInterpolation(player);
+
+        ctx.drawImage(
+            characterImg,
+            sprite.x, sprite.y,
             sprite.size, sprite.size,
-            x * TILE_SIZE, y * TILE_SIZE - charOffsetY,
-            sprite.size, sprite.size);
+            (interp.x - meCameraOffsetX) * TILE_SIZE,
+            (interp.y - meCameraOffsetY) * TILE_SIZE - CHAR_CENTER_OFFSET,
+            sprite.size, sprite.size
+        );
     }
 
-    requestAnimationFrame(draw);
+    requestAnimationFrame(gameLoop);
+}
+
+function handlePlayerMoveProgress(dt, player) {
+    if (!player.moving) return;
+
+    if (player.lastPos.x !== player.pos.x) {
+        player.progressX += player.speed * dt;
+    }
+
+    if (player.lastPos.y !== player.pos.y) {
+        player.progressY += player.speed * dt;
+    }
+
+    // Clamp progress
+    if (player.progressX > 1) player.progressX = 1;
+    if (player.progressY > 1) player.progressY = 1;
+
+    // End movement
+    if (player.progressX === 1 || player.progressY === 1) {
+        player.moving = false;
+    }
+}
+
+function getCharacterFacingSprite(player) {
+    let sprite = Sprites[SpriteIds.CHARACTER_DOWN];
+    switch (player.facing) {
+        case PlayerFacing.DOWN:
+            {
+                return Sprites[SpriteIds.CHARACTER_DOWN];
+            }
+            break;
+        case PlayerFacing.LEFT:
+            {
+                return Sprites[SpriteIds.CHARACTER_LEFT];
+            }
+            break;
+        case PlayerFacing.UP:
+            {
+                return Sprites[SpriteIds.CHARACTER_UP];
+            }
+            break;
+    }
+    return sprite;
+}
+
+function calcPlayerPosInterpolation(player) {
+    let interpX = player.pos.x;
+    let interpY = player.pos.y;
+    if (player.moving) {
+        interpX = player.lastPos.x + (player.pos.x - player.lastPos.x) * player.progressX;
+        interpY = player.lastPos.y + (player.pos.y - player.lastPos.y) * player.progressY;
+    }
+    return {
+        x: interpX, y: interpY
+    }
 }
 
 init();

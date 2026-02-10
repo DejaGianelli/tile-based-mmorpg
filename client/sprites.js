@@ -11,8 +11,10 @@ export const SpriteIds = Object.freeze({
     STONE_WALL_3: 3,
     STONE_WALL_4: 4,
     GREY_FLOOR_1: 5,
-    CHARACTER_1: 6,
+    CHARACTER_DOWN: 6,
     STONE_WALL_5: 7,
+    CHARACTER_LEFT: 8,
+    CHARACTER_UP: 9,
 });
 
 function Sprite(args) {
@@ -85,12 +87,32 @@ function greyFloor1() {
     });
 }
 
-function character1() {
+function characterDown() {
     return new Sprite({
-        id: SpriteIds.CHARACTER_1,
-        asset: Assets.TILESET,
+        id: SpriteIds.CHARACTER_DOWN,
+        asset: Assets.CHARACTER,
         x: 8,
         y: 5,
+        size: TILE_SIZE
+    });
+}
+
+function characterLeft() {
+    return new Sprite({
+        id: SpriteIds.CHARACTER_LEFT,
+        asset: Assets.CHARACTER,
+        x: 135,
+        y: 260,
+        size: TILE_SIZE
+    });
+}
+
+function characterUp() {
+    return new Sprite({
+        id: SpriteIds.CHARACTER_UP,
+        asset: Assets.CHARACTER,
+        x: 40,
+        y: 227,
         size: TILE_SIZE
     });
 }
@@ -101,6 +123,8 @@ export const Sprites = {
     3: stoneWall3(),
     4: stoneWall4(),
     5: greyFloor1(),
-    6: character1(),
+    6: characterDown(),
     7: stoneWall5(),
+    8: characterLeft(),
+    9: characterUp(),
 }

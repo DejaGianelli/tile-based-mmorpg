@@ -1,4 +1,4 @@
-import { PlayerCommand, Game } from "./game.js";
+import { PlayerCommand, Game, Pos } from "./game.js";
 
 function handle(command) {
     switch (command.id) {
@@ -49,6 +49,7 @@ function handleMoveDown(command) {
     if (Game.collissionGrid.hasCollision(pos.x, pos.y))
         return;
 
+    const currPos = new Pos(player.pos);
     player.moveDown();
 
     console.info(`Player ${command.playerId} is in position [${player.pos.x}, ${player.pos.y}]`);
@@ -56,7 +57,9 @@ function handleMoveDown(command) {
     return {
         playerId: player.id,
         command: PlayerCommand.MOVE_DOWN,
-        pos: pos
+        facing: player.facing,
+        from: currPos,
+        to: player.pos
     }
 }
 
@@ -72,6 +75,7 @@ function handleMoveUp(command) {
     if (Game.collissionGrid.hasCollision(pos.x, pos.y))
         return;
 
+    const currPos = new Pos(player.pos);
     player.moveUp();
 
     console.info(`Player ${command.playerId} is in position [${player.pos.x}, ${player.pos.y}]`);
@@ -79,7 +83,9 @@ function handleMoveUp(command) {
     return {
         playerId: player.id,
         command: PlayerCommand.MOVE_UP,
-        pos: pos
+        facing: player.facing,
+        from: currPos,
+        to: player.pos
     }
 }
 
@@ -95,14 +101,17 @@ function handleMoveLeft(command) {
     if (Game.collissionGrid.hasCollision(pos.x, pos.y))
         return;
 
+    const currPos = new Pos(player.pos);
     player.moveLeft();
 
     console.info(`Player ${command.playerId} is in position [${player.pos.x}, ${player.pos.y}]`);
 
     return {
         playerId: player.id,
+        facing: player.facing,
         command: PlayerCommand.MOVE_LEFT,
-        pos: pos
+        from: currPos,
+        to: player.pos
     }
 }
 
@@ -118,6 +127,7 @@ function handleMoveRight(command) {
     if (Game.collissionGrid.hasCollision(pos.x, pos.y))
         return;
 
+    const currPos = new Pos(player.pos);
     player.moveRight();
 
     console.info(`Player ${command.playerId} is in position [${player.pos.x}, ${player.pos.y}]`);
@@ -125,7 +135,9 @@ function handleMoveRight(command) {
     return {
         playerId: player.id,
         command: PlayerCommand.MOVE_RIGHT,
-        pos: pos
+        facing: player.facing,
+        from: currPos,
+        to: player.pos
     }
 }
 

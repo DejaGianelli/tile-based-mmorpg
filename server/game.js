@@ -10,6 +10,13 @@ const PlayerCommand = Object.freeze({
     LEFT_GAME: 'LEFT_GAME'
 });
 
+const PlayerFacing = Object.freeze({
+    UP: 1,
+    DOWN: 2,
+    LEFT: 3,
+    RIGHT: 4
+});
+
 const COLLISION_TYPES = {
     WALKABLE: 0b0,   // 0 - Can Walk Through
     BLOCKED: 0b1,   // 1 - Solid, can't pass
@@ -36,12 +43,12 @@ function CollissionGrid() {
         this.data[i] = 0b11111111; // All blocked by default
     }
 
-    this.setCollission(4, 6, COLLISION_TYPES.WALKABLE);
+    this.setCollission(5, 5, COLLISION_TYPES.WALKABLE);
+    this.setCollission(6, 5, COLLISION_TYPES.WALKABLE);
+    this.setCollission(7, 5, COLLISION_TYPES.WALKABLE);
     this.setCollission(5, 6, COLLISION_TYPES.WALKABLE);
     this.setCollission(6, 6, COLLISION_TYPES.WALKABLE);
-    this.setCollission(4, 7, COLLISION_TYPES.WALKABLE);
-    this.setCollission(5, 7, COLLISION_TYPES.WALKABLE);
-    this.setCollission(6, 7, COLLISION_TYPES.WALKABLE);
+    this.setCollission(7, 6, COLLISION_TYPES.WALKABLE);
 }
 
 /**
@@ -83,16 +90,15 @@ function Pos(args) {
 
 function Player(args) {
     this.id;
-    /**
-     * Global position, not visible
-     */
-    this.pos = new Pos({ x: 5, y: 7 });
+    this.pos = new Pos({ x: 6, y: 6 }); // Global Position
+    this.facing = PlayerFacing.UP;
 
     Object.assign(this, args);
 };
 
 Player.prototype.moveUp = function () {
     this.pos.y--;
+    this.facing = PlayerFacing.UP;
 }
 
 Player.prototype.moveUpIntent = function () {
@@ -101,6 +107,7 @@ Player.prototype.moveUpIntent = function () {
 
 Player.prototype.moveDown = function () {
     this.pos.y++;
+    this.facing = PlayerFacing.DOWN;
 }
 
 Player.prototype.moveDownIntent = function () {
@@ -109,6 +116,7 @@ Player.prototype.moveDownIntent = function () {
 
 Player.prototype.moveLeft = function () {
     this.pos.x--;
+    this.facing = PlayerFacing.LEFT;
 }
 
 Player.prototype.moveLeftIntent = function () {
@@ -117,6 +125,7 @@ Player.prototype.moveLeftIntent = function () {
 
 Player.prototype.moveRight = function () {
     this.pos.x++;
+    this.facing = PlayerFacing.RIGHT;
 }
 
 Player.prototype.moveRightIntent = function () {
@@ -163,4 +172,4 @@ Game.prototype.allPlayersExcept = function (playerId) {
 
 const instance = new Game();
 
-export { instance as Game, PlayerCommand };
+export { instance as Game, PlayerCommand, Pos };

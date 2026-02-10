@@ -7,6 +7,16 @@ const PlayerCommand = Object.freeze({
     LEFT_GAME: 'LEFT_GAME'
 });
 
+const PlayerFacing = Object.freeze({
+    UP: 1,
+    DOWN: 2,
+    LEFT: 3,
+    RIGHT: 4
+});
+
+/**
+  * Global position in the map
+  */
 function Pos(args) {
     this.x = 0;
     this.y = 0;
@@ -16,10 +26,15 @@ function Pos(args) {
 
 function Player(args) {
     this.id;
-    /**
-     * Global position, not visible
-     */
-    this.pos = new Pos({ x: 5, y: 7 });
+    this.pos;
+    this.lastPos;
+    this.facing = PlayerFacing.DOWN;
+    this.moving = false;
+    this.progressY = 0;
+    this.progressX = 0;
+    this.speed = 5;
+
+    this.pos = this.lastPos = new Pos({ x: 6, y: 6 });
 
     Object.assign(this, args);
 }
@@ -28,8 +43,13 @@ Player.prototype.moveTo = function (x, y) {
     this.pos = new Pos({ x, y });
 }
 
-Player.prototype.moveTo = function (x, y) {
-    this.pos = new Pos({ x, y });
+Player.prototype.moveTo = function (from, to, facing) {
+    this.moving = true;
+    this.facing = facing;
+    this.progressY = 0;
+    this.progressX = 0;
+    this.pos = to;
+    this.lastPos = from;
 }
 
 function Game() {
@@ -76,4 +96,4 @@ Game.prototype.getPlayerById = function (playerId) {
 
 const instance = new Game();
 
-export { instance as Game, PlayerCommand, Player };
+export { instance as Game, PlayerCommand, PlayerFacing, Player };
