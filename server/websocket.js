@@ -32,10 +32,11 @@ function startWebSocketServer() {
 
         ws.on('message', function message(data) {
             //console.log('received: %s', data);
+            const ws = this;
             const command = JSON.parse(data);
             const result = handleCommand(command);
             if (result) {
-                dispatchResult(result);
+                dispatchResult(result, ws);
             }
         });
 

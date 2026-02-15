@@ -7,7 +7,8 @@ const PlayerCommand = Object.freeze({
     MOVE_LEFT: 'MOVE_LEFT',
     MOVE_RIGHT: 'MOVE_RIGHT',
     JOIN_GAME: 'JOIN_GAME',
-    LEFT_GAME: 'LEFT_GAME'
+    LEFT_GAME: 'LEFT_GAME',
+    AUTO_ATTACK: 'AUTO_ATTACK'
 });
 
 const PlayerFacing = Object.freeze({
@@ -92,6 +93,7 @@ function Player(args) {
     this.id;
     this.pos = new Pos({ x: 6, y: 6 }); // Global Position
     this.facing = PlayerFacing.UP;
+    this.life = 100;
 
     Object.assign(this, args);
 };
@@ -132,10 +134,58 @@ Player.prototype.moveRightIntent = function () {
     return new Pos({ x: this.pos.x + 1, y: this.pos.y });
 }
 
+Player.prototype.attack = function (target) {
+    const targetLife = target.life;
+    const damage = 10; //Hardcoded for now
+    target.life -= damage;
+    return {
+        damage: damage
+    }
+}
+
+function Tile(args) {
+    this.players = []; // Stack of players in currently in this tile. playerId => Player
+
+    Object.assign(this, args);
+}
+
 function Game() {
     this.players = {}
     this.collissionGrid = new CollissionGrid();
+    this.tiles = []; // Map of tiles
+
+    // initialize tiles Grid
+    for (let x = 0; x < MAP_WIDTH; x++) {
+        this.tiles[x] = [];
+        for (let y = 0; y < MAP_HEIGHT; y++) {
+            this.tiles[x][y] = new Tile();
+        }
+    }
 };
+
+Game.prototype.pushPlayerInStack = function (x, y, player) {
+    this.tiles[x][y].players.push(player);
+}
+
+Game.prototype.removePlayerFromStack = function (x, y, player) {
+    this.tiles[x][y].players = this.tiles[x][y].players
+        .filter(p => p.id != player.id);
+}
+
+Game.prototype.hasPlayer = function (x, y) {
+    const players = this.tiles[x][y].players;
+    if (players.length == 0)
+        return false;
+    return true;
+}
+
+Game.prototype.peekPlayer = function (x, y) {
+    if (!this.hasPlayer(x, y)) {
+        return null;
+    }
+    const players = this.tiles[x][y].players;
+    return players[players.length - 1];
+}
 
 /**
  * Join a player into the game

@@ -9,6 +9,7 @@ export const CAMERA_CENTER_Y = Math.floor(CAMERA_HEIGHT / 2); // zero-based
 
 function Tile(args) {
     this.spriteId;
+    this.players = []; // Stack of players in currently in this tile. playerId => Player
 
     Object.assign(this, args);
 }
@@ -25,6 +26,30 @@ function MapGrid(args) {
     }
 
     Object.assign(this, args);
+}
+
+MapGrid.prototype.hasPlayer = function (x, y) {
+    const players = this.tiles[x][y].players;
+    if (players.length == 0)
+        return false;
+    return true;
+}
+
+MapGrid.prototype.peekPlayer = function (x, y) {
+    if (!this.hasPlayer(x, y)) {
+        return null;
+    }
+    const players = this.tiles[x][y].players;
+    return players[players.length - 1];
+}
+
+MapGrid.prototype.pushPlayerInStack = function (x, y, player) {
+    this.tiles[x][y].players.push(player);
+}
+
+MapGrid.prototype.removePlayerFromStack = function (x, y, player) {
+    this.tiles[x][y].players = this.tiles[x][y].players
+        .filter(p => p.id != player.id);
 }
 
 MapGrid.prototype.setTile = function (x, y, spriteId) {

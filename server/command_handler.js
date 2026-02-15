@@ -17,8 +17,43 @@ function handle(command) {
         case PlayerCommand.LEFT_GAME:
             return handlePlayerLeftGame(command);
 
+        case PlayerCommand.AUTO_ATTACK:
+            return handlePlayerAutoAttack(command);
+
         default:
             break;
+    }
+}
+
+function handlePlayerAutoAttack(command) {
+    const player = Game.getPlayerById(command.playerId);
+    const target = Game.getPlayerById(command.target);
+
+    if (!player) {
+        throw new Error("Player not found");
+    }
+
+    if (!target) {
+        return;
+    }
+
+    const rangeX = Math.abs(target.pos.x - player.pos.x);
+    const rangeY = Math.abs(target.pos.y - player.pos.y);
+
+    if (rangeX > 6 || rangeY > 6) {
+        console.log(`Player ${target.id} is out of range`);
+        return;
+    }
+
+    const result = player.attack(target);
+
+    console.log(`Player ${target.id} life is ${target.life}`);
+
+    return {
+        playerId: player.id,
+        command: PlayerCommand.AUTO_ATTACK,
+        targetId: target.id,
+        damage: result.damage 
     }
 }
 
@@ -51,6 +86,8 @@ function handleMoveDown(command) {
 
     const currPos = new Pos(player.pos);
     player.moveDown();
+    Game.removePlayerFromStack(currPos.x, currPos.y, player);
+    Game.pushPlayerInStack(player.pos.x, player.pos.y, player);
 
     console.info(`Player ${command.playerId} is in position [${player.pos.x}, ${player.pos.y}]`);
 
@@ -77,6 +114,8 @@ function handleMoveUp(command) {
 
     const currPos = new Pos(player.pos);
     player.moveUp();
+    Game.removePlayerFromStack(currPos.x, currPos.y, player);
+    Game.pushPlayerInStack(player.pos.x, player.pos.y, player);
 
     console.info(`Player ${command.playerId} is in position [${player.pos.x}, ${player.pos.y}]`);
 
@@ -103,6 +142,8 @@ function handleMoveLeft(command) {
 
     const currPos = new Pos(player.pos);
     player.moveLeft();
+    Game.removePlayerFromStack(currPos.x, currPos.y, player);
+    Game.pushPlayerInStack(player.pos.x, player.pos.y, player);
 
     console.info(`Player ${command.playerId} is in position [${player.pos.x}, ${player.pos.y}]`);
 
@@ -129,6 +170,8 @@ function handleMoveRight(command) {
 
     const currPos = new Pos(player.pos);
     player.moveRight();
+    Game.removePlayerFromStack(currPos.x, currPos.y, player);
+    Game.pushPlayerInStack(player.pos.x, player.pos.y, player);
 
     console.info(`Player ${command.playerId} is in position [${player.pos.x}, ${player.pos.y}]`);
 

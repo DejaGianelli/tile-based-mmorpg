@@ -10,6 +10,8 @@ const SOCKET_URI = `ws://localhost:${PORT}`
 const CHAR_CENTER_OFFSET = TILE_SIZE / 4;
 const canvasElem = document.getElementById("canvas");
 
+let websocket;
+
 const ctx = canvasElem.getContext("2d");
 
 canvasElem.width = CANVAS_WIDTH;
@@ -41,7 +43,7 @@ async function init() {
 
     await loadAssets();
 
-    const websocket = new WebSocket(SOCKET_URI);
+    websocket = new WebSocket(SOCKET_URI);
 
     websocket.addEventListener("open", (e) => {
         console.log("Connected!");
@@ -52,7 +54,6 @@ async function init() {
     });
 
     websocket.addEventListener("message", (e) => {
-        //console.log(e.data);
         const message = JSON.parse(e.data);
         switch (message.command) {
             case PlayerCommand.LEFT_GAME:
@@ -77,7 +78,11 @@ async function init() {
                     } else {
                         player = Game.getPlayerById(message.playerId);
                     }
-                    player.moveTo(message.from, message.to, message.facing);
+                    const from = message.from;
+                    const to = message.to;
+                    player.moveTo(from, to, message.facing);
+                    MapGrid.pushPlayerInStack(to.x, to.y, player);
+                    MapGrid.removePlayerFromStack(from.x, from.y, player);
                 }
                 break;
 
@@ -89,7 +94,11 @@ async function init() {
                     } else {
                         player = Game.getPlayerById(message.playerId);
                     }
-                    player.moveTo(message.from, message.to, message.facing);
+                    const from = message.from;
+                    const to = message.to;
+                    player.moveTo(from, to, message.facing);
+                    MapGrid.pushPlayerInStack(to.x, to.y, player);
+                    MapGrid.removePlayerFromStack(from.x, from.y, player);
                 }
                 break;
 
@@ -101,7 +110,11 @@ async function init() {
                     } else {
                         player = Game.getPlayerById(message.playerId);
                     }
-                    player.moveTo(message.from, message.to, message.facing);
+                    const from = message.from;
+                    const to = message.to;
+                    player.moveTo(from, to, message.facing);
+                    MapGrid.pushPlayerInStack(to.x, to.y, player);
+                    MapGrid.removePlayerFromStack(from.x, from.y, player);
                 }
                 break;
 
@@ -113,10 +126,23 @@ async function init() {
                     } else {
                         player = Game.getPlayerById(message.playerId);
                     }
-                    player.moveTo(message.from, message.to, message.facing);
+                    const from = message.from;
+                    const to = message.to;
+                    player.moveTo(from, to, message.facing);
+                    MapGrid.pushPlayerInStack(to.x, to.y, player);
+                    MapGrid.removePlayerFromStack(from.x, from.y, player);
                 }
                 break;
 
+            case PlayerCommand.AUTO_ATTACK:
+                {
+                    const target = Game.getPlayerById(message.targetId);
+                    if (!target) {
+                        return;
+                    }
+                    console.log(`Your attack caused ${message.damage} of damage in the player ${target.id}`);
+                }
+                break;
             default:
                 break;
         }
@@ -125,6 +151,34 @@ async function init() {
     websocket.addEventListener('close', (e) => {
         Game.leave();
         console.log('WebSocket connection closed:', e.code, e.reason);
+    });
+
+    canvasElem.addEventListener('contextmenu', (event) => {
+        event.preventDefault();
+        const rect = canvasElem.getBoundingClientRect();
+        const mouseX = event.clientX - rect.left;
+        const mouseY = event.clientY - rect.top;
+        const globalOffsetX = (Game.me.pos.x - CAMERA_CENTER_X);
+        const globalOffsetY = (Game.me.pos.y - CAMERA_CENTER_Y);
+        const globalX = Math.floor((mouseX / SCALE) / TILE_SIZE) + globalOffsetX;
+        const globalY = Math.floor((mouseY / SCALE) / TILE_SIZE) + globalOffsetY;
+        if (!MapGrid.hasPlayer(globalX, globalY)) {
+            return
+        }
+        const target = MapGrid.peekPlayer(globalX, globalY);
+        if (!target) {
+            return;
+        }
+        if (Game.isMe(target.id)) {
+            return;
+        }
+        if (!target.onTarget) {
+            target.onTarget = true;
+            Game.autoAttackInterval = setInterval(autoAttack, 1500, target);
+        } else {
+            target.onTarget = false;
+            clearInterval(Game.autoAttackInterval);
+        }
     });
 
     document.addEventListener('keydown', (event) => {
@@ -171,7 +225,6 @@ async function init() {
             default:
                 break;
         }
-        //console.log(`Player position [${Game.me.pos.x}, ${Game.me.pos.y}]`);
     });
 
     window.addEventListener('beforeunload', function (event) {
@@ -248,6 +301,18 @@ function gameLoop(time) {
 
         const interp = calcPlayerPosInterpolation(player);
 
+        // Draw Target
+        if (player.onTarget) {
+            ctx.strokeStyle = 'rgba(255, 0, 0, 0.4)';
+            ctx.lineWidth = 1; // Optional
+            ctx.beginPath();
+            ctx.rect(
+                (interp.x - meCameraOffsetX) * TILE_SIZE,
+                (interp.y - meCameraOffsetY) * TILE_SIZE,
+                TILE_SIZE, TILE_SIZE);
+            ctx.stroke();
+        }
+
         ctx.drawImage(
             characterImg,
             sprite.x, sprite.y,
@@ -314,6 +379,16 @@ function calcPlayerPosInterpolation(player) {
     return {
         x: interpX, y: interpY
     }
+}
+
+function autoAttack(target) {
+    const data = {
+        id: PlayerCommand.AUTO_ATTACK,
+        playerId: Game.me.id,
+        target: target.id
+    };
+    websocket.send(JSON.stringify(data));
+    console.log(`Attack player ${target.id} at X: ${target.pos.x}, Y: ${target.pos.y}`);
 }
 
 init();

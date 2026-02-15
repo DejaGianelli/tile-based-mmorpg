@@ -2,7 +2,7 @@ import { WebSocket } from "ws";
 import { PlayerCommand } from "./game.js";
 import { wss } from "./websocket.js";
 
-function dispatch(result) {
+function dispatch(result, ws) {
     switch (result.command) {
         case PlayerCommand.MOVE_DOWN:
             dispatchMoveDownResult(result);
@@ -28,6 +28,10 @@ function dispatch(result) {
             dispatchPlayerLeftGameResult(result);
             break;
 
+        case PlayerCommand.AUTO_ATTACK:
+            dispatchPlayerAutoAttackResult(result, ws);
+            break;
+
         default:
             break;
     }
@@ -40,6 +44,11 @@ function broadcast(result) {
             client.send(data, { binary: false });
         }
     });
+}
+
+function dispatchPlayerAutoAttackResult(result, ws) {
+    const data = Buffer.from(JSON.stringify(result));
+    ws.send(data, { binary: false });
 }
 
 function dispatchPlayerLeftGameResult(result) {

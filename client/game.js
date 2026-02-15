@@ -1,10 +1,13 @@
+import { MapGrid } from "./map.js";
+
 const PlayerCommand = Object.freeze({
     MOVE_UP: 'MOVE_UP',
     MOVE_DOWN: 'MOVE_DOWN',
     MOVE_LEFT: 'MOVE_LEFT',
     MOVE_RIGHT: 'MOVE_RIGHT',
     JOIN_GAME: 'JOIN_GAME',
-    LEFT_GAME: 'LEFT_GAME'
+    LEFT_GAME: 'LEFT_GAME',
+    AUTO_ATTACK: 'AUTO_ATTACK'
 });
 
 const PlayerFacing = Object.freeze({
@@ -33,6 +36,8 @@ function Player(args) {
     this.progressY = 0;
     this.progressX = 0;
     this.speed = 5;
+    this.life = 100;
+    this.onTarget = false;
 
     this.pos = this.lastPos = new Pos({ x: 6, y: 6 });
 
@@ -53,6 +58,7 @@ Player.prototype.moveTo = function (from, to, facing) {
 }
 
 function Game() {
+    this.autoAttackInterval = undefined;
     this.me = undefined;
     this.players = {}
 };
