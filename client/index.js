@@ -136,10 +136,17 @@ async function init() {
 
             case PlayerCommand.AUTO_ATTACK:
                 {
+                    if (Game.isMe(message.targetId)) {
+                        const me = Game.me;
+                        me.life -= message.damage;
+                        console.log(`You received an attack that caused ${message.damage} of damage`);
+                        return;
+                    }
                     const target = Game.getPlayerById(message.targetId);
                     if (!target) {
                         return;
                     }
+                    target.life -= message.damage;
                     console.log(`Your attack caused ${message.damage} of damage in the player ${target.id}`);
                 }
                 break;
@@ -290,6 +297,11 @@ function gameLoop(time) {
         CAMERA_CENTER_X * TILE_SIZE, CAMERA_CENTER_Y * TILE_SIZE - CHAR_CENTER_OFFSET,
         sprite.size, sprite.size);
 
+    // Draw lifebar
+    drawLifeBar(CAMERA_CENTER_X, CAMERA_CENTER_Y, me);
+
+    drawPlayerName(CAMERA_CENTER_X, CAMERA_CENTER_Y, me);
+
     // Draw players
     const players = Game.playersList();
 
@@ -300,6 +312,16 @@ function gameLoop(time) {
         handlePlayerMoveProgress(dt, player);
 
         const interp = calcPlayerPosInterpolation(player);
+
+        // Draw lifebar
+        drawLifeBar(
+            (interp.x - meCameraOffsetX),
+            (interp.y - meCameraOffsetY),
+            player);
+
+        drawPlayerName((interp.x - meCameraOffsetX),
+            (interp.y - meCameraOffsetY),
+            player)
 
         // Draw Target
         if (player.onTarget) {
@@ -379,6 +401,26 @@ function calcPlayerPosInterpolation(player) {
     return {
         x: interpX, y: interpY
     }
+}
+
+function drawPlayerName(x, y, player) {
+    ctx.font = 'bold 5px Arial';
+    ctx.fillStyle = '#33ff36';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(
+        player.id.substring(0, 4), (x * TILE_SIZE) + TILE_SIZE / 2,
+        y * TILE_SIZE - 8,
+        TILE_SIZE,
+        1.8);
+}
+
+function drawLifeBar(x, y, player) {
+    const size = player.life * TILE_SIZE / 100;
+    ctx.fillStyle = '#333333';
+    ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE - 7, TILE_SIZE, 1.8);
+    ctx.fillStyle = '#33ff36';
+    ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE - 7, size, 1.8);
 }
 
 function autoAttack(target) {

@@ -29,7 +29,7 @@ function dispatch(result, ws) {
             break;
 
         case PlayerCommand.AUTO_ATTACK:
-            dispatchPlayerAutoAttackResult(result, ws);
+            dispatchPlayerAutoAttackResult(result);
             break;
 
         default:
@@ -46,9 +46,8 @@ function broadcast(result) {
     });
 }
 
-function dispatchPlayerAutoAttackResult(result, ws) {
-    const data = Buffer.from(JSON.stringify(result));
-    ws.send(data, { binary: false });
+function dispatchPlayerAutoAttackResult(result) {
+    broadcast(result);
 }
 
 function dispatchPlayerLeftGameResult(result) {

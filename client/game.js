@@ -37,6 +37,7 @@ function Player(args) {
     this.progressX = 0;
     this.speed = 5;
     this.life = 100;
+    this.totalLife = 100;
     this.onTarget = false;
 
     this.pos = this.lastPos = new Pos({ x: 6, y: 6 });
