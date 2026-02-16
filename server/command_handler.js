@@ -47,13 +47,18 @@ function handlePlayerAutoAttack(command) {
 
     const result = player.attack(target);
 
+    if (result.targetLife <= 0) {
+        target.dead = true;
+    }
+
     console.log(`Player ${target.id} life is ${target.life}`);
 
     return {
         playerId: player.id,
         command: PlayerCommand.AUTO_ATTACK,
         targetId: target.id,
-        damage: result.damage 
+        damage: result.damage,
+        isDead: target.dead
     }
 }
 

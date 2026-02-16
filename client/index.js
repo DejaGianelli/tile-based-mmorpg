@@ -136,6 +136,11 @@ async function init() {
 
             case PlayerCommand.AUTO_ATTACK:
                 {
+                    const attacker = Game.getPlayerById(message.playerId);
+                    if (attacker) {
+                        attacker.isAttackingMyself = true
+                    }
+
                     if (Game.isMe(message.targetId)) {
                         const me = Game.me;
                         me.life -= message.damage;
@@ -148,6 +153,22 @@ async function init() {
                     }
                     target.life -= message.damage;
                     console.log(`Your attack caused ${message.damage} of damage in the player ${target.id}`);
+                }
+                break;
+            case PlayerCommand.PLAYER_DIED:
+                {
+                    if (Game.isMe(message.playerId)) {
+                        Game.me.isDead = true;
+                        window.alert("You Died!");
+                        window.location.reload();
+                        return;
+                    }
+                    const deadPlayer = Game.getPlayerById(message.playerId);
+                    if (!deadPlayer) {
+                        return;
+                    }
+                    deadPlayer.isDead = true;
+                    console.log(`Player ${deadPlayer.id} is dead!`)
                 }
                 break;
             default:
@@ -255,12 +276,16 @@ function gameLoop(time) {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    if (!Game.me) {
+    const me = Game.me;
+
+    if (!me) {
         requestAnimationFrame(gameLoop);
         return;
     }
 
-    const me = Game.me;
+    if (me.isDead) {
+        return;
+    }
 
     handlePlayerMoveProgress(dt, me);
 
@@ -335,6 +360,20 @@ function gameLoop(time) {
             ctx.stroke();
         }
 
+        // Draw attacker target
+        handleAttackerTarget(dt, player);
+
+        if (player.isAttackingMyself) {
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 1; // Optional
+            ctx.beginPath();
+            ctx.rect(
+                (interp.x - meCameraOffsetX) * TILE_SIZE,
+                (interp.y - meCameraOffsetY) * TILE_SIZE,
+                TILE_SIZE, TILE_SIZE);
+            ctx.stroke();
+        }
+
         ctx.drawImage(
             characterImg,
             sprite.x, sprite.y,
@@ -346,6 +385,25 @@ function gameLoop(time) {
     }
 
     requestAnimationFrame(gameLoop);
+}
+
+function handleAttackerTarget(dt, player) {
+    if (!player.isAttackingMyself) {
+        return;
+    }
+    if (!player.hasOwnProperty('attackerTargetProgress')) {
+        player.attackerTargetProgress = 0;
+    }
+    player.attackerTargetProgress += 3 * dt;
+    // Clamp progress
+    if (player.attackerTargetProgress > 1) {
+        player.attackerTargetProgress = 1;
+    }
+    // Remove Target
+    if (player.attackerTargetProgress == 1) {
+        delete player.attackerTargetProgress;
+        player.isAttackingMyself = false;
+    }
 }
 
 function handlePlayerMoveProgress(dt, player) {
@@ -423,14 +481,19 @@ function drawLifeBar(x, y, player) {
     ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE - 7, size, 1.8);
 }
 
-function autoAttack(target) {
+function autoAttack(player) {
+    if (player.isDead) {
+        player.onTarget = false;
+        clearInterval(Game.autoAttackInterval);
+        return;
+    }
     const data = {
         id: PlayerCommand.AUTO_ATTACK,
         playerId: Game.me.id,
-        target: target.id
+        target: player.id
     };
     websocket.send(JSON.stringify(data));
-    console.log(`Attack player ${target.id} at X: ${target.pos.x}, Y: ${target.pos.y}`);
+    console.log(`Attack player ${player.id} at X: ${player.pos.x}, Y: ${player.pos.y}`);
 }
 
 init();

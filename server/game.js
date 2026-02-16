@@ -8,7 +8,8 @@ const PlayerCommand = Object.freeze({
     MOVE_RIGHT: 'MOVE_RIGHT',
     JOIN_GAME: 'JOIN_GAME',
     LEFT_GAME: 'LEFT_GAME',
-    AUTO_ATTACK: 'AUTO_ATTACK'
+    AUTO_ATTACK: 'AUTO_ATTACK',
+    PLAYER_DIED: 'PLAYER_DIED'
 });
 
 const PlayerFacing = Object.freeze({
@@ -94,6 +95,7 @@ function Player(args) {
     this.pos = new Pos({ x: 6, y: 6 }); // Global Position
     this.facing = PlayerFacing.UP;
     this.life = 100;
+    this.dead = false;
 
     Object.assign(this, args);
 };
@@ -139,7 +141,8 @@ Player.prototype.attack = function (target) {
     const damage = 10; //Hardcoded for now
     target.life -= damage;
     return {
-        damage: damage
+        damage: damage,
+        targetLife: target.life
     }
 }
 

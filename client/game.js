@@ -7,7 +7,8 @@ const PlayerCommand = Object.freeze({
     MOVE_RIGHT: 'MOVE_RIGHT',
     JOIN_GAME: 'JOIN_GAME',
     LEFT_GAME: 'LEFT_GAME',
-    AUTO_ATTACK: 'AUTO_ATTACK'
+    AUTO_ATTACK: 'AUTO_ATTACK',
+    PLAYER_DIED: 'PLAYER_DIED'
 });
 
 const PlayerFacing = Object.freeze({
@@ -39,6 +40,8 @@ function Player(args) {
     this.life = 100;
     this.totalLife = 100;
     this.onTarget = false;
+    this.isDead = false;
+    this.isAttackingMyself = false; // Whether the player is currently attacking myself (logged player)
 
     this.pos = this.lastPos = new Pos({ x: 6, y: 6 });
 

@@ -1,5 +1,5 @@
 import { WebSocket } from "ws";
-import { PlayerCommand } from "./game.js";
+import { Game, PlayerCommand } from "./game.js";
 import { wss } from "./websocket.js";
 
 function dispatch(result, ws) {
@@ -48,6 +48,17 @@ function broadcast(result) {
 
 function dispatchPlayerAutoAttackResult(result) {
     broadcast(result);
+    if (result.isDead) {
+        const deadPlayer = Game.getPlayerById(result.targetId);
+        broadcast({
+            playerId: deadPlayer.id,
+            command: PlayerCommand.PLAYER_DIED,
+            pos: {
+                x: deadPlayer.pos.x,
+                y: deadPlayer.pos.y,
+            }
+        });
+    }
 }
 
 function dispatchPlayerLeftGameResult(result) {
