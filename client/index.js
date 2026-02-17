@@ -57,6 +57,8 @@ async function init() {
         const message = JSON.parse(e.data);
         switch (message.command) {
             case PlayerCommand.LEFT_GAME:
+                const player = Game.getPlayerById(message.playerId);
+                MapGrid.removePlayerFromStack(player.pos.x, player.pos.y, player);
                 delete Game.players[message.playerId];
                 console.log(`Player ${message.playerId} left the game`);
                 break;

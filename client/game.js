@@ -79,12 +79,16 @@ Game.prototype.isMe = function (playerId) {
 Game.prototype.joinMyself = function (playerId) {
     const player = new Player({ id: playerId });
     this.me = player;
+    MapGrid.pushPlayerInStack(player.pos.x, player.pos.y, player);
+    return this.me;
 }
 
 Game.prototype.setPlayers = function (players) {
     this.players = {};
     Object.entries(players).forEach(([key, value]) => {
-        this.players[key] = new Player(value);
+        const player = new Player(value);
+        this.players[key] = player;
+        MapGrid.pushPlayerInStack(player.pos.x, player.pos.y, player);
     });
 }
 
@@ -94,6 +98,8 @@ Game.prototype.joinPlayer = function (playerId) {
     }
     const player = new Player({ id: playerId });
     this.players[playerId] = player;
+    MapGrid.pushPlayerInStack(player.pos.x, player.pos.y, player);
+    return player;
 }
 
 Game.prototype.leave = function () {
